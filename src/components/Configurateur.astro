@@ -31,13 +31,35 @@ const configuration_actuelle = configurationInitiale ?? configuration_par_defaut
     <BasketDessus {...configuration_actuelle} />
   </div>
 
+  <div class="chat-ia flex w-full max-w-md flex-col items-center gap-2 py-2">
+    <div class="chat-historique flex max-h-60 w-full flex-col gap-2 overflow-y-auto"></div>
+    <textarea
+      class="chat-message textarea textarea-bordered w-full"
+      placeholder="Ex : une semelle noire et des lacets rouge vif"
+    ></textarea>
+    <div class="flex w-full gap-2">
+      <button
+        type="button"
+        class="chat-button flex-1 rounded bg-primary px-4 py-2 font-semibold text-white transition hover:bg-secondary"
+      >
+        Demander à l'IA
+      </button>
+      <button
+        type="button"
+        class="chat-nouvelle rounded border border-base-content/30 bg-base-100 px-3 py-2 text-sm font-medium hover:bg-base-200"
+      >
+        Nouvelle conversation
+      </button>
+    </div>
+  </div>
+
   <form method="POST" class="flex flex-col items-center gap-4">
     <input
-  type="text"
-  name="description"
-  placeholder="Nom de la basket"
-  class="input input-bordered w-full max-w-xs"
-/>
+      type="text"
+      name="description"
+      placeholder="Nom de la basket"
+      class="input input-bordered w-full max-w-xs"
+    />
     <div class="flex flex-wrap items-center justify-center gap-4 py-2">
       {Object.entries(configuration_actuelle).map(([partie, couleur]) => (
         <div class="flex flex-col items-center">
@@ -69,11 +91,31 @@ const configuration_actuelle = configurationInitiale ?? configuration_par_defaut
   document.querySelectorAll<HTMLElement>(".configurateur").forEach((configurateur) => {
     const configurationDefaut: Record<string, string> = JSON.parse(configurateur.dataset.configurationDefaut ?? "{}");
     const inputs = configurateur.querySelectorAll<HTMLInputElement>('input[type="color"]');
+    const history: { role: "user" | "assistant"; content: string }[] = [];
+    const chatHistorique = configurateur.querySelector<HTMLDivElement>(".chat-historique");
+    const chatButton = configurateur.querySelector<HTMLButtonElement>(".chat-button");
+    const chatMessage = configurateur.querySelector<HTMLTextAreaElement>(".chat-message");
+    const chatNouvelle = configurateur.querySelector<HTMLButtonElement>(".chat-nouvelle");
 
     const colorier = (partie: string, couleur: string) => {
       configurateur.querySelectorAll(`svg .${partie}`).forEach((element) => {
         element.setAttribute("fill", couleur);
       });
+    };
+
+    const afficherMessage = (role: "user" | "assistant", texte: string) => {
+      if (!chatHistorique) return;
+
+      const bulle = document.createElement("div");
+      bulle.className = role === "user" ? "chat chat-end" : "chat chat-start";
+      bulle.innerHTML = '<div class="chat-bubble"></div>';
+      const bubble = bulle.querySelector(".chat-bubble");
+      if (bubble) {
+        bubble.textContent = texte;
+      }
+
+      chatHistorique.appendChild(bulle);
+      chatHistorique.scrollTo({ top: chatHistorique.scrollHeight });
     };
 
     inputs.forEach((input) => {
@@ -85,6 +127,60 @@ const configuration_actuelle = configurationInitiale ?? configuration_par_defaut
         input.value = configurationDefaut[input.name];
         colorier(input.name, input.value);
       });
+    });
+
+    chatNouvelle?.addEventListener("click", () => {
+      history.length = 0;
+      if (chatHistorique) {
+        chatHistorique.innerHTML = "";
+      }
+    });
+
+    chatButton?.addEventListener("click", async () => {
+      const message = chatMessage?.value.trim() ?? "";
+      if (!message) return;
+
+      chatButton.disabled = true;
+      chatButton.textContent = "Réflexion en cours...";
+
+      const configurationActuelle: Record<string, string> = {};
+      inputs.forEach((input) => {
+        configurationActuelle[input.name] = input.value;
+      });
+
+      try {
+        const res = await fetch("/api/generateColors", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, configuration: configurationActuelle, historique: history }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        const couleurs = data.couleurs ?? {};
+        const texteAssistant = typeof data.reponse === "string" && data.reponse.trim() ? data.reponse : `Couleurs appliquées : ${Object.keys(couleurs).join(", ") || "Aucune"}`;
+
+        inputs.forEach((input) => {
+          if (couleurs[input.name]) {
+            input.value = couleurs[input.name];
+            colorier(input.name, input.value);
+          }
+        });
+
+        history.push({ role: "user", content: message });
+        history.push({ role: "assistant", content: data.reponse ?? JSON.stringify(couleurs) });
+        afficherMessage("user", message);
+        afficherMessage("assistant", texteAssistant);
+
+        if (chatMessage) {
+          chatMessage.value = "";
+        }
+      } catch (error) {
+        console.error("Erreur de requête IA", error);
+        afficherMessage("assistant", "Erreur lors de la génération des couleurs.");
+      } finally {
+        chatButton.disabled = false;
+        chatButton.textContent = "Demander à l'IA";
+      }
     });
   });
 </script>
