@@ -5,6 +5,8 @@ const databasePath = process.env.NETLIFY === "true"
   ? "/tmp/r312-auth.sqlite"
   : new URL("../../data/db.sqlite", import.meta.url).pathname;
 const database = new Database(databasePath);
+const betterAuthUrl = process.env.BETTER_AUTH_URL ?? import.meta.env.BETTER_AUTH_URL;
+const betterAuthSecret = process.env.BETTER_AUTH_SECRET ?? import.meta.env.BETTER_AUTH_SECRET;
 
 database.exec(`
   CREATE TABLE IF NOT EXISTS user (
@@ -53,8 +55,8 @@ database.exec(`
 
 export const auth = betterAuth({
   database,
-  baseURL: import.meta.env.BETTER_AUTH_URL,
-  secret: import.meta.env.BETTER_AUTH_SECRET,
+  baseURL: betterAuthUrl,
+  secret: betterAuthSecret,
   emailAndPassword: { enabled: true },
    socialProviders: {
     google: {

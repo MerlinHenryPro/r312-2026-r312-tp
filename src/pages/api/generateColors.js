@@ -2,8 +2,9 @@ export const prerender = false;
 
 import { OpenAI } from "openai";
 
-const INFERENCE_API_KEY = import.meta.env.INFERENCE_API_KEY;
-const INFERENCE_MODEL = import.meta.env.INFERENCE_MODEL ?? "google/gemma-3-27b-it:free";
+const INFERENCE_API_KEY = process.env.INFERENCE_API_KEY ?? import.meta.env.INFERENCE_API_KEY;
+const INFERENCE_URL = process.env.INFERENCE_URL ?? import.meta.env.INFERENCE_URL;
+const INFERENCE_MODEL = process.env.INFERENCE_MODEL ?? import.meta.env.INFERENCE_MODEL ?? "google/gemma-3-27b-it:free";
 
 const PARTIES = ["semelle", "empeigne", "pointe", "oeillet", "bande", "languette", "lacet", "trimestre"];
 
@@ -11,7 +12,7 @@ export const POST = async ({ request }) => {
   const { message, configuration, historique = [] } = await request.json();
 
   const client = new OpenAI({
-    baseURL: import.meta.env.INFERENCE_URL,
+    baseURL: INFERENCE_URL,
     apiKey: INFERENCE_API_KEY,
   });
 
