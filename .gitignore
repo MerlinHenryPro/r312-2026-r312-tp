@@ -28,3 +28,5 @@ TD*.md
 *.html
 
 data/db.sqlite*
+# Local Netlify folder
+.netlify
