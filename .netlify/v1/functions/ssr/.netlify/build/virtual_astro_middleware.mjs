@@ -1,5 +1,5 @@
 import { ct as defineMiddleware, t as sequence } from "./chunks/sequence_-QGHDwK9.mjs";
-import { t as auth } from "./chunks/auth_BEoa9GbF.mjs";
+import { t as auth } from "./chunks/auth_CfGiCHdG.mjs";
 //#region src/middleware.ts
 var onRequest$1 = defineMiddleware(async (context, next) => {
 	const { pathname } = context.url;

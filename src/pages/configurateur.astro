@@ -39,10 +39,10 @@ if (Astro.request.method === "POST") {
     gradients_basket = {};
   }
 
-db.run(
+db.prepare(
   `INSERT INTO BASKETS (user_id, description, semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre, tags, gradients)
    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
-  [
+  ).run(
     Astro.locals.user!.id,
     description,
     configuration_basket.semelle,
@@ -53,9 +53,8 @@ db.run(
     configuration_basket.languette,
     configuration_basket.lacet,
     configuration_basket.trimestre,
-      JSON.stringify(normaliserTags(tags)),
+    JSON.stringify(normaliserTags(tags)),
     gradients,
-    ],
   );
 }
 ---

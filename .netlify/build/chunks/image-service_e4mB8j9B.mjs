@@ -1,5 +1,5 @@
 import { $ as AstroUserError } from "./errors-data_BTJkX44o.mjs";
-import { i as isESMImportedImage, n as baseService, r as verifyOptions } from "./generic_DKfoLxfB.mjs";
+import { i as isESMImportedImage, n as baseService, r as verifyOptions } from "./generic_MEmvJcTO.mjs";
 import "@astrojs/internal-helpers/remote";
 //#region node_modules/@astrojs/netlify/dist/image-service.js
 var SUPPORTED_FORMATS = [

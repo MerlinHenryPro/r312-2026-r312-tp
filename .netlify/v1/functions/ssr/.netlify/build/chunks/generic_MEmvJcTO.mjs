@@ -6,7 +6,7 @@ import { isRemotePath, removeQueryString } from "@astrojs/internal-helpers/path"
 import { isRemoteAllowed } from "@astrojs/internal-helpers/remote";
 import * as mime from "mrmime";
 //#region \0virtual:astro:logger
-var level = "debug";
+var level = "info";
 var VALID_SUPPORTED_FORMATS = [
 	"jpeg",
 	"jpg",
@@ -1336,7 +1336,7 @@ var cssFitValues = [
 ];
 async function getConfiguredImageService() {
 	if (!globalThis?.astroAsset?.imageService) {
-		const { default: service } = await import("./image-service_DtAnE6Sy.mjs").catch((e) => {
+		const { default: service } = await import("./image-service_e4mB8j9B.mjs").catch((e) => {
 			const error = new AstroError(InvalidImageService);
 			error.cause = e;
 			throw error;

@@ -5,7 +5,7 @@ import { t as renderScript } from "./script_CIiv1Zln.mjs";
 import { t as $$Layout } from "./Layout_Cgp1X5Ud.mjs";
 import { t as $$BasketProfil } from "./BasketProfil_B3yvHYSW.mjs";
 import { t as $$BasketDessus } from "./BasketDessus_C8o9Ih6s.mjs";
-import { r as normaliserTags, t as db } from "./db_CqyTowHk.mjs";
+import { r as normaliserTags, t as db } from "./db_DWWRFVLs.mjs";
 //#region src/components/Configurateur.astro
 createAstro("https://astro.build");
 var $$Configurateur$1 = createComponent(($$result, $$props, $$slots) => {
@@ -68,21 +68,8 @@ var $$Configurateur = createComponent(async ($$result, $$props, $$slots) => {
 		} catch {
 			gradients_basket = {};
 		}
-		db.run(`INSERT INTO BASKETS (user_id, description, semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre, tags, gradients)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-			Astro.locals.user.id,
-			description,
-			configuration_basket.semelle,
-			configuration_basket.empeigne,
-			configuration_basket.pointe,
-			configuration_basket.oeillet,
-			configuration_basket.bande,
-			configuration_basket.languette,
-			configuration_basket.lacet,
-			configuration_basket.trimestre,
-			JSON.stringify(normaliserTags(tags)),
-			gradients
-		]);
+		db.prepare(`INSERT INTO BASKETS (user_id, description, semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre, tags, gradients)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(Astro.locals.user.id, description, configuration_basket.semelle, configuration_basket.empeigne, configuration_basket.pointe, configuration_basket.oeillet, configuration_basket.bande, configuration_basket.languette, configuration_basket.lacet, configuration_basket.trimestre, JSON.stringify(normaliserTags(tags)), gradients);
 	}
 	return renderTemplate`${renderComponent($$result, "Layout", $$Layout, {}, { "default": ($$result) => renderTemplate`${renderComponent($$result, "Configurateur", $$Configurateur$1, {
 		"configurationInitiale": configuration_basket,

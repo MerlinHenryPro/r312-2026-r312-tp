@@ -3,7 +3,7 @@ import { A as maybeRenderHead, M as addAttribute, k as renderTemplate, w as rend
 import { t as createComponent } from "./compiler_Dpe4cbLr.mjs";
 import { t as $$Layout } from "./Layout_Cgp1X5Ud.mjs";
 import { t as $$BasketProfil } from "./BasketProfil_B3yvHYSW.mjs";
-import { n as lireTags, t as db } from "./db_CqyTowHk.mjs";
+import { n as lireTags, t as db } from "./db_DWWRFVLs.mjs";
 //#region src/pages/baskets/index.astro
 var baskets_exports = /* @__PURE__ */ __exportAll({
 	default: () => $$Index,

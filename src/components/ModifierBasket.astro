@@ -54,20 +54,19 @@ if (Astro.request.method === "POST") {
     trimestre: formData.get("trimestre")?.toString() ?? "#ffffff",
   };
 
-  db.run(
+  db.prepare(
   `UPDATE BASKETS
      SET description = ?, semelle = ?, empeigne = ?, pointe = ?, oeillet = ?,
       bande = ?, languette = ?, lacet = ?, trimestre = ?, tags = ?, gradients = ?
    WHERE id = ? AND user_id = ?`,
-  [
+  ).run(
     description, configuration_basket.semelle, configuration_basket.empeigne,
     configuration_basket.pointe, configuration_basket.oeillet, configuration_basket.bande,
     configuration_basket.languette, configuration_basket.lacet, configuration_basket.trimestre,
     JSON.stringify(normaliserTags(tags)),
     JSON.stringify(gradients),
     id, Astro.locals.user!.id,
-  ],
-);
+  );
 }
 ---
 

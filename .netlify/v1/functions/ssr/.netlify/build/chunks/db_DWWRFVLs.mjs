@@ -1,8 +1,9 @@
-import { Database } from "bun:sqlite";
+import { DatabaseSync } from "node:sqlite";
 //#region src/lib/db.ts
-var db = new Database(new URL("../../data/db.sqlite", import.meta.url).pathname, { create: true });
+var databasePath = process.env.NETLIFY === "true" ? "/tmp/r312-baskets.sqlite" : new URL("../../data/db.sqlite", import.meta.url).pathname;
+var db = new DatabaseSync(databasePath);
 db.exec("PRAGMA journal_mode = WAL;");
-db.run(`CREATE TABLE IF NOT EXISTS BASKETS (
+db.exec(`CREATE TABLE IF NOT EXISTS BASKETS (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id TEXT NOT NULL REFERENCES user(id),
   description TEXT,
@@ -17,8 +18,8 @@ db.run(`CREATE TABLE IF NOT EXISTS BASKETS (
   tags TEXT DEFAULT '[]',
   gradients TEXT DEFAULT '{}'
 )`);
-if (!db.query("SELECT 1 FROM pragma_table_info('BASKETS') WHERE name = 'tags'").get()) db.run("ALTER TABLE BASKETS ADD COLUMN tags TEXT DEFAULT '[]'");
-if (!db.query("SELECT 1 FROM pragma_table_info('BASKETS') WHERE name = 'gradients'").get()) db.run("ALTER TABLE BASKETS ADD COLUMN gradients TEXT DEFAULT '{}'");
+if (!db.prepare("SELECT 1 FROM pragma_table_info('BASKETS') WHERE name = 'tags'").get()) db.exec("ALTER TABLE BASKETS ADD COLUMN tags TEXT DEFAULT '[]'");
+if (!db.prepare("SELECT 1 FROM pragma_table_info('BASKETS') WHERE name = 'gradients'").get()) db.exec("ALTER TABLE BASKETS ADD COLUMN gradients TEXT DEFAULT '{}'");
 var normaliserTags = (valeur) => [...new Set(valeur.split(",").map((tag) => tag.trim().toLowerCase()).filter(Boolean))].slice(0, 12);
 var lireTags = (valeur) => {
 	try {
