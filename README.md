@@ -1,3 +1,10 @@
 # r312-2026-r312-tp
 
-clé API IA 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
+Fonctionnalités ajoutées : 
+- Gradient pour un élément spécifique
+- tags custom et filtres pour ces tags
+- code de partage des chaussures, export + import
+
+lien du github : https://github.com/MerlinHenryPro/r312-2026-r312-tp
+
+lien netlify : https://r312-2026-r312-tp.netlify.app/

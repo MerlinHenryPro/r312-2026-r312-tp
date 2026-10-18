@@ -11,7 +11,7 @@ const tagsDisponibles = [...new Set(toutesLesBaskets.flatMap((basket) => lireTag
 const tagsSelectionnes = Astro.url.searchParams.getAll("tag");
 const baskets = toutesLesBaskets.filter((basket) => {
   const tags = lireTags(basket.tags);
-  return tagsSelectionnes.length === 0 || tagsSelectionnes.every((tag) => tags.includes(tag));
+  return tagsSelectionnes.length === 0 || tagsSelectionnes.every((tag: string) => tags.includes(tag));
 });
 ---
 
