@@ -5,3 +5,4 @@
 [build.environment]
   BUN_VERSION = "1.4.3"
   NODE_VERSION = "22"
+  BETTER_AUTH_URL = "https://r312-2026-r312-tp.netlify.app"

@@ -53,6 +53,8 @@ database.exec(`
 
 export const auth = betterAuth({
   database,
+  baseURL: import.meta.env.BETTER_AUTH_URL,
+  secret: import.meta.env.BETTER_AUTH_SECRET,
   emailAndPassword: { enabled: true },
    socialProviders: {
     google: {
