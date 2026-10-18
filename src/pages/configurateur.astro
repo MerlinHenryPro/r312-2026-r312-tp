@@ -1,0 +1,55 @@
+---
+export const prerender = false;
+
+import Layout from "../layouts/Layout.astro";
+import Configurateur from "../components/Configurateur.astro";
+import db from "../lib/db.js";
+
+let configuration_basket = {
+  semelle: "#ffffff",
+  empeigne: "#ffffff",
+  pointe: "#ffffff",
+  oeillet: "#ffffff",
+  bande: "#ffffff",
+  languette: "#ffffff",
+  lacet: "#ffffff",
+  trimestre: "#ffffff",
+};
+
+if (Astro.request.method === "POST") {
+  const formData = await Astro.request.formData();
+  configuration_basket = {
+    semelle: formData.get("semelle")?.toString() ?? "#ffffff",
+    empeigne: formData.get("empeigne")?.toString() ?? "#ffffff",
+    pointe: formData.get("pointe")?.toString() ?? "#ffffff",
+    oeillet: formData.get("oeillet")?.toString() ?? "#ffffff",
+    bande: formData.get("bande")?.toString() ?? "#ffffff",
+    languette: formData.get("languette")?.toString() ?? "#ffffff",
+    lacet: formData.get("lacet")?.toString() ?? "#ffffff",
+    trimestre: formData.get("trimestre")?.toString() ?? "#ffffff",
+  };
+
+  const description = formData.get("description")?.toString() ?? "";
+
+db.run(
+  `INSERT INTO BASKETS (user_id, description, semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  [
+    Astro.locals.user!.id,
+    description,
+    configuration_basket.semelle,
+    configuration_basket.empeigne,
+    configuration_basket.pointe,
+    configuration_basket.oeillet,
+    configuration_basket.bande,
+    configuration_basket.languette,
+    configuration_basket.lacet,
+    configuration_basket.trimestre,
+    ],
+  );
+}
+---
+
+<Layout>
+  <Configurateur configurationInitiale={configuration_basket} />
+</Layout>

@@ -1,0 +1,39 @@
+---
+import "../styles/global.css";
+const user = Astro.locals.user;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Astro Basics</title>
+	</head>
+	<body>
+		<nav class="navbar bg-base-200 px-4">
+			<div class="flex-1 flex gap-4">
+				<a href="/" class="text-lg font-semibold">Accueil</a>
+				<a href="/configurateur">Configurateur</a>
+				<a href="/baskets">Mes Baskets</a>
+			</div>
+			<div class="flex-none">
+				{user && <button id="logout" class="btn btn-sm">Déconnexion ({user.name})</button>}
+			</div>
+		</nav>
+
+		<slot />
+	</body>
+</html>
+
+<script>
+	import { authClient } from "../lib/auth-client";
+
+	document.querySelector("#logout")?.addEventListener("click", async () => {
+		await authClient.signOut();
+		window.location.href = "/login";
+	});
+</script>

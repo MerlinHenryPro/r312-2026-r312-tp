@@ -1,0 +1,27 @@
+{
+  "name": "r312-td-bun",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "bun --bun run astro dev",
+    "build": "bun --bun run astro build",
+    "preview": "bun --bun run astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.6",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.3.2",
+    "better-auth": "^1.7.7",
+    "tailwindcss": "^4.3.3"
+  },
+  "allowScripts": {
+    "esbuild": true
+  },
+  "devDependencies": {
+    "daisyui": "^5.7.36"
+  }
+}

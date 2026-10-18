@@ -1,0 +1,90 @@
+---
+import BasketProfil from './BasketProfil.astro';
+import BasketDessus from './BasketDessus.astro';
+
+interface Props {
+  configurationInitiale?: Record<string, string>;
+}
+
+const { configurationInitiale } = Astro.props;
+
+const configuration_par_defaut = {
+    semelle: "#ffffff",
+    empeigne: "#ffffff",
+    pointe: "#ffffff",
+    oeillet: "#ffffff",
+    bande: "#ffffff",
+    languette: "#ffffff",
+    lacet: "#ffffff",
+    trimestre: "#ffffff"
+};
+
+const configuration_actuelle = configurationInitiale ?? configuration_par_defaut;
+---
+
+<div
+  class="configurateur flex flex-col items-center gap-6 p-4"
+  data-configuration-defaut={JSON.stringify(configuration_par_defaut)}
+>
+  <div class="flex flex-wrap justify-center gap-4">
+    <BasketProfil {...configuration_actuelle} />
+    <BasketDessus {...configuration_actuelle} />
+  </div>
+
+  <form method="POST" class="flex flex-col items-center gap-4">
+    <input
+  type="text"
+  name="description"
+  placeholder="Nom de la basket"
+  class="input input-bordered w-full max-w-xs"
+/>
+    <div class="flex flex-wrap items-center justify-center gap-4 py-2">
+      {Object.entries(configuration_actuelle).map(([partie, couleur]) => (
+        <div class="flex flex-col items-center">
+          <label for={partie} class="text-sm font-medium capitalize">{partie}</label>
+          <input type="color" id={partie} name={partie} value={couleur} class="cursor-pointer" />
+        </div>
+      ))}
+    </div>
+
+    <div class="flex gap-4">
+      <button 
+        type="submit" 
+        class="border-2 border-green-600 bg-green-600 text-white rounded-lg px-4 py-2 font-semibold hover:bg-green-700 transition-colors cursor-pointer"
+      >
+        Enregistrer la configuration
+      </button>
+
+      <button 
+        type="button" 
+        class="reinitialiser border-2 border-black rounded-lg px-4 py-2 font-semibold hover:bg-black hover:text-white transition-colors cursor-pointer"
+      >
+        Réinitialiser les couleurs
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>(".configurateur").forEach((configurateur) => {
+    const configurationDefaut: Record<string, string> = JSON.parse(configurateur.dataset.configurationDefaut ?? "{}");
+    const inputs = configurateur.querySelectorAll<HTMLInputElement>('input[type="color"]');
+
+    const colorier = (partie: string, couleur: string) => {
+      configurateur.querySelectorAll(`svg .${partie}`).forEach((element) => {
+        element.setAttribute("fill", couleur);
+      });
+    };
+
+    inputs.forEach((input) => {
+      input.addEventListener("input", () => colorier(input.name, input.value));
+    });
+
+    configurateur.querySelector(".reinitialiser")?.addEventListener("click", () => {
+      inputs.forEach((input) => {
+        input.value = configurationDefaut[input.name];
+        colorier(input.name, input.value);
+      });
+    });
+  });
+</script>
