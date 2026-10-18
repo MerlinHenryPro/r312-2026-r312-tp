@@ -1,17 +1,45 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import BasketProfil from "../../components/BasketProfil.astro";
-import db from "../../lib/db.js";
+import db, { lireTags } from "../../lib/db.js";
 import type { Basket } from "../../lib/db.js";
 
-const baskets: Basket[] = db
+const toutesLesBaskets: Basket[] = db
   .prepare("SELECT * FROM BASKETS WHERE user_id = ?")
   .all(Astro.locals.user!.id);
+const tagsDisponibles = [...new Set(toutesLesBaskets.flatMap((basket) => lireTags(basket.tags)))].sort();
+const tagsSelectionnes = Astro.url.searchParams.getAll("tag");
+const baskets = toutesLesBaskets.filter((basket) => {
+  const tags = lireTags(basket.tags);
+  return tagsSelectionnes.length === 0 || tagsSelectionnes.every((tag) => tags.includes(tag));
+});
 ---
 
 <Layout>
   <div class="p-4">
     <h1 class="text-2xl font-bold mb-6 text-center">Mes baskets</h1>
+
+    <form method="GET" class="mb-6 flex justify-center">
+      <details class="dropdown">
+        <summary class="btn btn-outline">Filtrer par tags ({tagsSelectionnes.length})</summary>
+        <div class="dropdown-content z-10 mt-2 w-64 rounded-box bg-base-100 p-4 shadow-xl">
+          {tagsDisponibles.length > 0 ? (
+            <div class="flex max-h-60 flex-col gap-2 overflow-y-auto">
+              {tagsDisponibles.map((tag) => (
+                <label class="flex cursor-pointer items-center gap-2">
+                  <input type="checkbox" name="tag" value={tag} class="checkbox checkbox-sm" checked={tagsSelectionnes.includes(tag)} />
+                  <span>{tag}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <p class="text-sm opacity-70">Aucun tag disponible.</p>
+          )}
+          <button type="submit" class="btn btn-primary mt-4 w-full">Appliquer</button>
+          {tagsSelectionnes.length > 0 && <a href="/baskets" class="btn btn-ghost mt-2 w-full">Réinitialiser</a>}
+        </div>
+      </details>
+    </form>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {baskets.map((basket) => (
@@ -19,6 +47,9 @@ const baskets: Basket[] = db
           <div class="card-body items-center text-center">
             <BasketProfil {...basket} />
             <h2 class="card-title">{basket.description || "Sans nom"}</h2>
+            <div class="flex flex-wrap justify-center gap-1">
+              {lireTags(basket.tags).map((tag) => <span class="badge badge-outline">{tag}</span>)}
+            </div>
             <div class="card-actions justify-center mt-2">
               <a href={`/baskets/${basket.id}`} class="btn btn-primary">Modifier</a>
             </div>

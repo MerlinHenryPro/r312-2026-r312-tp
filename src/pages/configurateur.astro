@@ -3,7 +3,7 @@ export const prerender = false;
 
 import Layout from "../layouts/Layout.astro";
 import Configurateur from "../components/Configurateur.astro";
-import db from "../lib/db.js";
+import db, { normaliserTags } from "../lib/db.js";
 
 let configuration_basket = {
   semelle: "#ffffff",
@@ -15,6 +15,7 @@ let configuration_basket = {
   lacet: "#ffffff",
   trimestre: "#ffffff",
 };
+let gradients_basket: Record<string, string> = {};
 
 if (Astro.request.method === "POST") {
   const formData = await Astro.request.formData();
@@ -30,10 +31,17 @@ if (Astro.request.method === "POST") {
   };
 
   const description = formData.get("description")?.toString() ?? "";
+  const tags = formData.get("tags")?.toString() ?? "";
+  const gradients = formData.get("gradients")?.toString() ?? "{}";
+  try {
+    gradients_basket = JSON.parse(gradients);
+  } catch {
+    gradients_basket = {};
+  }
 
 db.run(
-  `INSERT INTO BASKETS (user_id, description, semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  `INSERT INTO BASKETS (user_id, description, semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre, tags, gradients)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
   [
     Astro.locals.user!.id,
     description,
@@ -45,11 +53,13 @@ db.run(
     configuration_basket.languette,
     configuration_basket.lacet,
     configuration_basket.trimestre,
+      JSON.stringify(normaliserTags(tags)),
+    gradients,
     ],
   );
 }
 ---
 
 <Layout>
-  <Configurateur configurationInitiale={configuration_basket} />
+  <Configurateur configurationInitiale={configuration_basket} gradientsInitiale={gradients_basket} />
 </Layout>

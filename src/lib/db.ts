@@ -18,6 +18,8 @@ export interface Basket {
   languette: string;
   lacet: string;
   trimestre: string;
+  tags: string;
+  gradients: string;
 }
 
 db.run(`CREATE TABLE IF NOT EXISTS BASKETS (
@@ -31,7 +33,35 @@ db.run(`CREATE TABLE IF NOT EXISTS BASKETS (
   bande TEXT DEFAULT '#ffffff',
   languette TEXT DEFAULT '#ffffff',
   lacet TEXT DEFAULT '#ffffff',
-  trimestre TEXT DEFAULT '#ffffff'
+  trimestre TEXT DEFAULT '#ffffff',
+  tags TEXT DEFAULT '[]',
+  gradients TEXT DEFAULT '{}'
 )`);
+
+const colonneTags = db
+  .query("SELECT 1 FROM pragma_table_info('BASKETS') WHERE name = 'tags'")
+  .get();
+if (!colonneTags) {
+  db.run("ALTER TABLE BASKETS ADD COLUMN tags TEXT DEFAULT '[]'");
+}
+
+const colonneGradients = db
+  .query("SELECT 1 FROM pragma_table_info('BASKETS') WHERE name = 'gradients'")
+  .get();
+if (!colonneGradients) {
+  db.run("ALTER TABLE BASKETS ADD COLUMN gradients TEXT DEFAULT '{}'");
+}
+
+export const normaliserTags = (valeur: string) =>
+  [...new Set(valeur.split(",").map((tag) => tag.trim().toLowerCase()).filter(Boolean))].slice(0, 12);
+
+export const lireTags = (valeur: string | null | undefined) => {
+  try {
+    const tags = JSON.parse(valeur ?? "[]");
+    return Array.isArray(tags) ? tags.filter((tag): tag is string => typeof tag === "string") : [];
+  } catch {
+    return [];
+  }
+};
 
 export default db;

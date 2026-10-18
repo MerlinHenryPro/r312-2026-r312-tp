@@ -1,7 +1,7 @@
 ---
 import BasketProfil from "./BasketProfil.astro";
 import BasketDessus from "./BasketDessus.astro";
-import db from "../lib/db.js";
+import db, { lireTags, normaliserTags } from "../lib/db.js";
 
 interface Props {
   id: number;
@@ -14,10 +14,22 @@ interface Props {
   languette: string;
   lacet: string;
   trimestre: string;
+  tags: string;
+  gradients: string;
 }
 
-const { id, semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre } = Astro.props;
+const { id, semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre, tags: tagsJson, gradients: gradientsJson } = Astro.props;
 let { description } = Astro.props;
+let tags = lireTags(tagsJson).join(", ");
+const lireGradients = (valeur: string | null | undefined) => {
+  try {
+    const parsed = JSON.parse(valeur ?? "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+let gradients = lireGradients(gradientsJson);
 
 let configuration_basket = { semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre };
 
@@ -28,6 +40,8 @@ if (Astro.request.method === "POST") {
   const formData = await Astro.request.formData();
 
   description = formData.get("description")?.toString() ?? "";
+  tags = formData.get("tags")?.toString() ?? "";
+  gradients = lireGradients(formData.get("gradients")?.toString());
 
   configuration_basket = {
     semelle: formData.get("semelle")?.toString() ?? "#ffffff",
@@ -42,13 +56,15 @@ if (Astro.request.method === "POST") {
 
   db.run(
   `UPDATE BASKETS
-   SET description = ?, semelle = ?, empeigne = ?, pointe = ?, oeillet = ?,
-       bande = ?, languette = ?, lacet = ?, trimestre = ?
+     SET description = ?, semelle = ?, empeigne = ?, pointe = ?, oeillet = ?,
+      bande = ?, languette = ?, lacet = ?, trimestre = ?, tags = ?, gradients = ?
    WHERE id = ? AND user_id = ?`,
   [
     description, configuration_basket.semelle, configuration_basket.empeigne,
     configuration_basket.pointe, configuration_basket.oeillet, configuration_basket.bande,
     configuration_basket.languette, configuration_basket.lacet, configuration_basket.trimestre,
+    JSON.stringify(normaliserTags(tags)),
+    JSON.stringify(gradients),
     id, Astro.locals.user!.id,
   ],
 );
@@ -58,6 +74,7 @@ if (Astro.request.method === "POST") {
 <div
   class="configurateur flex flex-col items-center gap-6 p-4"
   data-configuration-defaut={JSON.stringify(configuration_de_depart)}
+  data-gradients={JSON.stringify(gradients)}
 >
   <div class="flex flex-wrap justify-center gap-4">
     <BasketProfil {...configuration_basket} />
@@ -65,6 +82,7 @@ if (Astro.request.method === "POST") {
   </div>
 
   <form method="POST" action={`/baskets/${id}`} class="flex flex-col items-center gap-4">
+    <input type="hidden" name="gradients" class="gradients-formulaire" value={JSON.stringify(gradients)} />
     <input
       type="text"
       name="description"
@@ -72,6 +90,45 @@ if (Astro.request.method === "POST") {
       placeholder="Nom de la basket"
       class="input input-bordered w-full max-w-xs"
     />
+    <input
+      type="text"
+      name="tags"
+      value={tags}
+      placeholder="Tags séparés par des virgules : sport, rouge"
+      class="input input-bordered w-full max-w-xs"
+    />
+    <div class="flex w-full max-w-md flex-col gap-3 rounded-lg border border-base-content/20 p-4">
+      <h2 class="text-lg font-semibold">Partager cette chaussure</h2>
+      <div class="flex w-full gap-2">
+        <input type="text" class="code-chaussure input input-bordered min-w-0 flex-1 font-mono text-sm" readonly placeholder="Le code apparaîtra ici" aria-label="Code de la chaussure actuelle" />
+        <button type="button" class="copier-code btn btn-primary">Copier le code</button>
+      </div>
+      <div class="flex w-full gap-2">
+        <input type="text" class="importer-code input input-bordered min-w-0 flex-1 font-mono text-sm" placeholder="Coller un code de chaussure" aria-label="Code de la chaussure à importer" />
+        <button type="button" class="importer-chaussure btn btn-outline">Importer</button>
+      </div>
+      <p class="code-message min-h-5 text-sm" role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="flex w-full max-w-md flex-col gap-3 rounded-lg border border-base-content/20 p-4">
+      <h2 class="text-lg font-semibold">Ajouter un gradient</h2>
+      <div class="flex flex-wrap items-end gap-2">
+        <label class="flex min-w-36 flex-1 flex-col gap-1 text-sm font-medium">
+          Partie
+          <select class="gradient-partie select select-bordered w-full">
+            {Object.keys(configuration_basket).map((partie) => <option value={partie}>{partie}</option>)}
+          </select>
+        </label>
+        <label class="flex flex-col gap-1 text-sm font-medium">
+          Seconde couleur
+          <input type="color" class="gradient-couleur h-10 w-16 cursor-pointer" value="#000000" />
+        </label>
+        <button type="button" class="appliquer-gradient btn btn-primary">Appliquer</button>
+        <button type="button" class="supprimer-gradient btn btn-outline">Supprimer</button>
+      </div>
+      <p class="gradient-message min-h-5 text-sm" role="status" aria-live="polite"></p>
+    </div>
+
     <div class="flex flex-wrap items-center justify-center gap-4 py-2">
       {Object.entries(configuration_basket).map(([partie, couleur]) => (
         <div class="flex flex-col items-center">
@@ -103,15 +160,95 @@ if (Astro.request.method === "POST") {
   document.querySelectorAll<HTMLElement>(".configurateur").forEach((configurateur) => {
     const configurationDefaut: Record<string, string> = JSON.parse(configurateur.dataset.configurationDefaut ?? "{}");
     const inputs = configurateur.querySelectorAll<HTMLInputElement>('input[type="color"]');
+    const parties = Object.keys(configurationDefaut);
+    const gradients: Record<string, string> = JSON.parse(configurateur.dataset.gradients ?? "{}");
+    const gradientsFormulaire = configurateur.querySelector<HTMLInputElement>(".gradients-formulaire");
+    const codeChaussure = configurateur.querySelector<HTMLInputElement>(".code-chaussure");
+    const importerCode = configurateur.querySelector<HTMLInputElement>(".importer-code");
+    const copierCode = configurateur.querySelector<HTMLButtonElement>(".copier-code");
+    const importerChaussure = configurateur.querySelector<HTMLButtonElement>(".importer-chaussure");
+    const codeMessage = configurateur.querySelector<HTMLParagraphElement>(".code-message");
+    const gradientPartie = configurateur.querySelector<HTMLSelectElement>(".gradient-partie");
+    const gradientCouleur = configurateur.querySelector<HTMLInputElement>(".gradient-couleur");
+    const appliquerGradient = configurateur.querySelector<HTMLButtonElement>(".appliquer-gradient");
+    const supprimerGradient = configurateur.querySelector<HTMLButtonElement>(".supprimer-gradient");
+    const gradientMessage = configurateur.querySelector<HTMLParagraphElement>(".gradient-message");
+
+    const lireConfiguration = () => Object.fromEntries([...inputs].map((input) => [input.name, input.value]));
+    const synchroniserGradients = () => {
+      if (gradientsFormulaire) gradientsFormulaire.value = JSON.stringify(gradients);
+    };
 
     const colorier = (partie: string, couleur: string) => {
-      configurateur.querySelectorAll(`svg .${partie}`).forEach((element) => {
-        element.setAttribute("fill", couleur);
+      configurateur.querySelectorAll<SVGElement>(`svg .${partie}`).forEach((element) => {
+        const gradient = element.closest("svg")?.querySelector<SVGLinearGradientElement>(`linearGradient[data-partie="${partie}"]`);
+        if (gradients[partie] && gradient) {
+          gradient.querySelector("stop")?.setAttribute("stop-color", couleur);
+        } else {
+          element.setAttribute("fill", couleur);
+        }
       });
     };
 
+    const definirGradient = (partie: string, couleurSecondaire: string) => {
+      gradients[partie] = couleurSecondaire;
+      configurateur.querySelectorAll<SVGSVGElement>("svg").forEach((svg, index) => {
+        let defs = svg.querySelector("defs");
+        if (!defs) {
+          defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+          svg.prepend(defs);
+        }
+        const gradientId = `gradient-${partie}-${index}`;
+        let gradient = defs.querySelector<SVGLinearGradientElement>(`#${gradientId}`);
+        if (!gradient) {
+          gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+          gradient.id = gradientId;
+          gradient.dataset.partie = partie;
+          gradient.innerHTML = '<stop offset="0%"></stop><stop offset="100%"></stop>';
+          defs.appendChild(gradient);
+        }
+        gradient.querySelector("stop")?.setAttribute("stop-color", lireConfiguration()[partie]);
+        gradient.querySelectorAll("stop")[1]?.setAttribute("stop-color", couleurSecondaire);
+        svg.querySelectorAll<SVGElement>(`.${partie}`).forEach((element) => element.setAttribute("fill", `url(#${gradientId})`));
+      });
+    };
+
+    const retirerGradient = (partie: string) => {
+      delete gradients[partie];
+      configurateur.querySelectorAll<SVGSVGElement>("svg").forEach((svg) => svg.querySelector(`linearGradient[data-partie="${partie}"]`)?.remove());
+      colorier(partie, lireConfiguration()[partie]);
+    };
+
+    const afficherCode = () => {
+      if (codeChaussure) codeChaussure.value = `BASKET-1-${btoa(JSON.stringify({ v: 1, couleurs: lireConfiguration(), gradients }))}`;
+    };
+
+    const afficherMessageCode = (message: string, erreur = false) => {
+      if (codeMessage) {
+        codeMessage.textContent = message;
+        codeMessage.className = `code-message min-h-5 text-sm ${erreur ? "text-error" : "text-success"}`;
+      }
+    };
+
+    const decoderCode = (code: string) => {
+      try {
+        if (!code.startsWith("BASKET-1-")) return null;
+        const donnees = JSON.parse(atob(code.slice(9)));
+        const couleurs = donnees.couleurs;
+        const gradientsImportes = donnees.gradients ?? {};
+        if (Object.keys(couleurs).length !== parties.length || !parties.every((partie) => /^#[0-9a-fA-F]{6}$/.test(couleurs[partie]))) return null;
+        if (!Object.keys(gradientsImportes).every((partie) => parties.includes(partie) && /^#[0-9a-fA-F]{6}$/.test(gradientsImportes[partie]))) return null;
+        return { couleurs, gradients: gradientsImportes };
+      } catch {
+        return null;
+      }
+    };
+
     inputs.forEach((input) => {
-      input.addEventListener("input", () => colorier(input.name, input.value));
+      input.addEventListener("input", () => {
+        colorier(input.name, input.value);
+        afficherCode();
+      });
     });
 
     configurateur.querySelector(".reinitialiser")?.addEventListener("click", () => {
@@ -119,6 +256,57 @@ if (Astro.request.method === "POST") {
         input.value = configurationDefaut[input.name];
         colorier(input.name, input.value);
       });
+      afficherCode();
+    });
+
+    parties.forEach((partie) => {
+      if (gradients[partie]) definirGradient(partie, gradients[partie]);
+    });
+    synchroniserGradients();
+    afficherCode();
+
+    appliquerGradient?.addEventListener("click", () => {
+      if (!gradientPartie?.value || !gradientCouleur?.value) return;
+      definirGradient(gradientPartie.value, gradientCouleur.value);
+      synchroniserGradients();
+      if (gradientMessage) gradientMessage.textContent = `Gradient appliqué sur ${gradientPartie.value}.`;
+    });
+
+    supprimerGradient?.addEventListener("click", () => {
+      if (!gradientPartie?.value) return;
+      retirerGradient(gradientPartie.value);
+      synchroniserGradients();
+      if (gradientMessage) gradientMessage.textContent = `Gradient supprimé sur ${gradientPartie.value}.`;
+    });
+
+    copierCode?.addEventListener("click", async () => {
+      afficherCode();
+      try {
+        await navigator.clipboard.writeText(codeChaussure?.value ?? "");
+        afficherMessageCode("Code copié.");
+      } catch {
+        codeChaussure?.select();
+        afficherMessageCode("Copie automatique impossible : copiez le code sélectionné.", true);
+      }
+    });
+
+    importerChaussure?.addEventListener("click", () => {
+      const chaussure = decoderCode(importerCode?.value.trim() ?? "");
+      if (!chaussure) {
+        afficherMessageCode("Code invalide ou incompatible.", true);
+        return;
+      }
+      inputs.forEach((input) => {
+        input.value = chaussure.couleurs[input.name];
+        colorier(input.name, input.value);
+      });
+      parties.forEach((partie) => {
+        retirerGradient(partie);
+        if (chaussure.gradients[partie]) definirGradient(partie, chaussure.gradients[partie]);
+      });
+      synchroniserGradients();
+      afficherCode();
+      afficherMessageCode("Chaussure importée.");
     });
   });
 </script>
